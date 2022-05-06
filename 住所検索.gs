@@ -1,41 +1,22 @@
 function getAddressGeo() {
- const FACILITY_COL         = 1;
- const SECONDSEARCHTERM_COL = 2;
- const ADDRESS_COL          = 3;
- const LAT_COL              = 4;
- const LNG_COL              = 5;
- const URL                  = 6;
-
- let sheet   = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('シート1');
- let lastrow = sheet.getLastRow();
-  
- for(let i=2; i<=lastrow; i++){ 
-   let facility = sheet.getRange(i,FACILITY_COL).getValue();
-   let secondSearchTerm = sheet.getRange(i,SECONDSEARCHTERM_COL).getValue();
-   facility = facility + " " + secondSearchTerm;
-
-   let geocoder = Maps.newGeocoder();
-   geocoder.setLanguage('ja');
-  
-   let response = geocoder.geocode(facility);
-    
-   if(response['results'].length > 0){
-      for (let j = 0; j < response['results'].length; j++){
-        let colpuls  = 4*j;
-        let latvalue = response['results'][j]['geometry']['location']['lat'];
-        let lngvalue = response['results'][j]['geometry']['location']['lng'];
-        let url = getMapUrl(latvalue,lngvalue);
-        sheet.getRange(i,ADDRESS_COL+colpuls).setValue(response['results'][j]['formatted_address']);
-        sheet.getRange(i,LAT_COL+colpuls).setValue(latvalue);
-        sheet.getRange(i,LNG_COL+colpuls).setValue(lngvalue);
-        sheet.getRange(i,URL+colpuls).setValue('=HYPERLINK("'+url+'","'+facility+'")');
+ const common  = 'https://www.google.com/maps/search/?api=1&query=';
+ let ws        = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('シート1');
+ for(let i=2; i<=ws.getLastRow(); i++){ 
+   let facility = ws.getRange(i,1).getValue() + " " + ws.getRange(i,2).getValue();
+   let geo = Maps.newGeocoder();
+   geo.setLanguage('ja');
+   let res = geo.geocode(facility);
+   if(res['results'].length > 0){
+      for (let j = 0; j < res['results'].length; j++){
+        let lat = res['results'][j]['geometry']['location']['lat'];
+        let lng = res['results'][j]['geometry']['location']['lng'];
+        let url = common + lat + ',' + lng;
+        ws.getRange(i,3+ 4*j).setValue(res['results'][j]['formatted_address']);
+        ws.getRange(i,4+ 4*j).setValue(lat);
+        ws.getRange(i,5+ 4*j).setValue(lng);
+        ws.getRange(i,6+ 4*j).setValue('=HYPERLINK("'+url+'","'+facility+'")');
       }
    }
  }
 }
 
-function getMapUrl(latitude,longitude){
-  const common        = 'https://www.google.com/maps/search/?api=1&query=';
-  const googleMapsUrl = common + latitude + ',' + longitude;
-  return googleMapsUrl
-}
